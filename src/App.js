@@ -10,17 +10,17 @@
  */
 
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { getMainContract, getRouterContract } from "./utils/contracts";
 
 function App() {
-  const [wallet, setWallet] = useState(null);  // get wallet interface
+  const [wallet, setWallet] = useState(null); // get wallet interface
   const [provider, setProvider] = useState(null); // get the provider for signer
-  const [contract, setContract] = useState('sepolia');  // setting contract instance based on network
+  const [contract, setContract] = useState("sepolia"); // setting contract instance based on network
   const [proposalId, setProposalId] = useState(null); // setting proposal ID for voting
   const [vote, setVote] = useState(0); // Voting for or against; 0: for, 1: against
-
+  const [chainId, setChainId] = useState(1);
   /**
    * Function to connect the wallet
    * When the wallet is connected, the wallet address is set to the state along with provider
@@ -38,6 +38,7 @@ function App() {
         // console.log(accounts[0]);
         setProvider(new ethers.BrowserProvider(window.ethereum));
         console.log(provider);
+
         // console.log(await getSigner());
       });
   };
@@ -49,6 +50,7 @@ function App() {
    */
 
   const getSigner = async () => {
+    // setChainId((await provider.getNetwork()).chainId);
     const signer = await provider.getSigner();
     // console.log(signer);
     return signer;
@@ -58,15 +60,47 @@ function App() {
    * Function to select the contract based on network and call the voting function based on the contract
    */
 
+
   const contractSelection = async () => {
-    if (contract === "sepolia") {
-      const contract = await getMainContract(await getSigner());
-      const tx = contract.voteProposal(proposalId, vote);
-      tx.then((res) => console.log(res));
-    } else if (contract === "mumbai") {
-      const contract = await getRouterContract(await getSigner());
-      const tx = contract.sendVote(proposalId, vote);
-      tx.then((res) => console.log(res));
+    if (provider !== null) {
+      let networkId = await provider.getNetwork();
+      console.log(networkId.chainId);
+      if (contract === "mumbai") {
+        console.log(
+          "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        );
+        if (networkId.chainId !== 80001n) {
+          console.log("Chain Change request Initiated");
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x13881" }],
+          });
+          setProvider(new ethers.BrowserProvider(window.ethereum));
+        }
+        console.log("Chain changed to mumbai");
+        const signer = await getSigner();
+        const contractNetwork = await getRouterContract(signer);
+        await contractNetwork
+          .sendVote(proposalId, vote, { value: ethers.parseEther("0.00001") })
+          .then((res) => console.log(res))
+          .catch((err) => console.log(err));
+      } else if (contract === "sepolia") {
+        if (chainId.chainId !== 11155111n) {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0xaa36a7" }],
+          });
+          setProvider(new ethers.BrowserProvider(window.ethereum));
+        }
+        const signer = await getSigner();
+        const contractNetwork = await getMainContract(signer);
+        await contractNetwork
+          .voteProposal(proposalId, vote)
+          .then((res) => console.log(res))
+          .catch((err) => console.log(err));
+      }
+    } else {
+      console.log("NO PROVIDER");
     }
   };
 
@@ -74,9 +108,10 @@ function App() {
    * Function to handle the change in the select element for network which will later be used to select the contract
    */
 
-  const handleSelect = (e) => {
+  const handleSelect = async (e) => {
     console.log(e.target.value);
     setContract(e.target.value);
+    // await chainIdDisplay();
   };
 
   /**
@@ -86,6 +121,16 @@ function App() {
     console.log(e.target.value);
     setVote(e.target.value);
   };
+
+  // const chainIdDisplay = async () => {
+  //   console.log("CONTROL PASSED");
+  //   if (provider) {
+  //     let chainId = await provider.getNetwork();
+  //     console.log(chainId.chainId);
+  //   } else {
+  //     console.log("NO PROVIDER");
+  //   }
+  // };
 
   /**
    * To do By Me:
@@ -97,7 +142,7 @@ function App() {
     <div className="App">
       <button onClick={connectWallet}>Connect Wallet</button>
       <p>{wallet}</p>
-      <select onChange={handleSelect} >
+      <select onChange={handleSelect}>
         <option value="sepolia">Sepolia</option>
         <option value="mumbai">Mumbai</option>
       </select>

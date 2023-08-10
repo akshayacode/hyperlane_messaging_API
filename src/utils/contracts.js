@@ -7,7 +7,7 @@ const mainAddress = "0x0F8FA0BFF68B80a9715ac797606D3cb424A1F951"; // network sep
 
 
 export const getRouterContract = async(signer) => {
-    return new ethers.Contract(routerAddress, abiRouter.abi, signer);
+    return new ethers.Contract(routerAddress, abiRouter.abiRouter, signer);
 }
 
 export const getMainContract = async(signer) => {
