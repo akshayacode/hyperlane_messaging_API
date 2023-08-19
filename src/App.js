@@ -1,16 +1,5 @@
-/**
- * JSX part :
- *  Connect Wallet button
- *  Dont enable any other elements until connect wallet button is shown
- *  After the wallet is connected, then show the rest of the elements except Sign Button
- *  Show Sign button only after proposalID, Vote and the network is selected
- *
- * Functionality part I need to work on :
- *  I need to implement useEffect for chain changing
- */
-
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ethers } from "ethers";
 import { getMainContract, getRouterContract } from "./utils/contracts";
 
@@ -20,7 +9,6 @@ function App() {
   const [contract, setContract] = useState("sepolia"); // setting contract instance based on network
   const [proposalId, setProposalId] = useState(null); // setting proposal ID for voting
   const [vote, setVote] = useState(0); // Voting for or against; 0: for, 1: against
-  const [chainId, setChainId] = useState(1);
 
   /**
    * Function to connect the wallet
@@ -30,18 +18,14 @@ function App() {
     const { ethereum } = window;
     if (!ethereum) {
       alert("Get metamask!");
-    }
+    }else{
     ethereum
       .request({ method: "eth_requestAccounts" })
       .then(async (accounts) => {
-        // console.log(window.ethereum);
         setWallet(accounts[0]);
-        // console.log(accounts[0]);
         setProvider(new ethers.BrowserProvider(window.ethereum));
         console.log(provider);
-
-        // console.log(await getSigner());
-      });
+      });}
   };
 
   /**
@@ -51,9 +35,7 @@ function App() {
    */
 
   const getSigner = async () => {
-    // setChainId((await provider.getNetwork()).chainId);
     const signer = await provider.getSigner();
-    // console.log(signer);
     return signer;
   };
 
@@ -61,7 +43,7 @@ function App() {
    * Function to select the contract based on network and call the voting function based on the contract
    */
 
-  const contractSelection = async () => {
+  const contractCaller = async () => {
     if (provider !== null) {
       let networkId = await provider.getNetwork();
       console.log(networkId.chainId);
@@ -83,9 +65,9 @@ function App() {
         await contractNetwork
           .sendVote(proposalId, vote, { value: ethers.parseEther("0.00001") })
           .then((res) => console.log(res))
-          .catch((err) => console.log(err));
+          .catch((err) => alert(err));
       } else if (contract === "sepolia") {
-        if (chainId.chainId !== 11155111n) {
+        if (networkId.chainId !== 11155111n) {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: "0xaa36a7" }],
@@ -97,7 +79,7 @@ function App() {
         await contractNetwork
           .voteProposal(proposalId, vote)
           .then((res) => console.log(res))
-          .catch((err) => console.log(err));
+          .catch((err) => alert(err));
       }
     } else {
       console.log("NO PROVIDER");
@@ -111,7 +93,6 @@ function App() {
   const handleSelect = async (e) => {
     console.log(e.target.value);
     setContract(e.target.value);
-    // await chainIdDisplay();
   };
 
   /**
@@ -121,22 +102,6 @@ function App() {
     console.log(e.target.value);
     setVote(e.target.value);
   };
-
-  // const chainIdDisplay = async () => {
-  //   console.log("CONTROL PASSED");
-  //   if (provider) {
-  //     let chainId = await provider.getNetwork();
-  //     console.log(chainId.chainId);
-  //   } else {
-  //     console.log("NO PROVIDER");
-  //   }
-  // };
-
-  /**
-   * To do By Me:
-   * 1. Implement useEffect for chain changing
-   *
-   */
 
   return (
     <div classNameName="App">
@@ -210,7 +175,7 @@ function App() {
 
                     <div className="flex items-center justify-end mt-5 space-x-4">
                       <button
-                        onClick={contractSelection}
+                        onClick={contractCaller}
                         type="button"
                         className="inline-flex items-center justify-center w-full px-6 py-4 text-xs font-bold tracking-widest text-white uppercase transition-all duration-200 bg-blue-900 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-blue-700"
                       >
@@ -228,7 +193,7 @@ function App() {
                           />
 
                           <div className="flex-1 ml-4">
-                            <p className="text-base font-bold text-gray-900">
+                            {/* <p className="text-base font-bold text-gray-900">
                               {contract}
                             </p>
                             <p className="mt-1 text-sm font-medium text-gray-500">
@@ -236,7 +201,7 @@ function App() {
                             </p>
                             <p className="mt-1 text-sm font-medium text-gray-500">
                               {proposalId}
-                            </p>
+                            </p> */}
                           </div>
                         </div>
                       </div>
@@ -255,7 +220,7 @@ function App() {
                     Connect your wallet
                   </p>
                   <p className="mt-1 text-base font-medium text-gray-500">
-                    Lorem ipsum dolor sit amet, consectetur.
+                    Connect your wallet to vote
                   </p>
                 </div>
               </div>

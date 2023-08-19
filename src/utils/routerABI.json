@@ -1,5 +1,4 @@
-{
-	"abiRouter": [
+ [
 		{
 			"inputs": [
 				{
@@ -45,4 +44,3 @@
 			"type": "function"
 		}
 	]
-}
