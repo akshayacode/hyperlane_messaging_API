@@ -18,14 +18,15 @@ function App() {
     const { ethereum } = window;
     if (!ethereum) {
       alert("Get metamask!");
-    }else{
-    ethereum
-      .request({ method: "eth_requestAccounts" })
-      .then(async (accounts) => {
-        setWallet(accounts[0]);
-        setProvider(new ethers.BrowserProvider(window.ethereum));
-        console.log(provider);
-      });}
+    } else {
+      ethereum
+        .request({ method: "eth_requestAccounts" })
+        .then(async (accounts) => {
+          setWallet(accounts[0]);
+          setProvider(new ethers.BrowserProvider(window.ethereum));
+          console.log(provider);
+        });
+    }
   };
 
   /**
@@ -61,11 +62,13 @@ function App() {
         }
         console.log("Chain changed to mumbai");
         const signer = await getSigner();
+        console.log("signer", signer)
         const contractNetwork = await getRouterContract(signer);
+
         await contractNetwork
-          .sendVote(proposalId, vote, { value: ethers.parseEther("0.00001") })
-          .then((res) => console.log(res))
-          .catch((err) => alert(err));
+          .sendVote(proposalId, vote, { value: ethers.parseEther("0.01"), gasLimit: "3000000" })
+          .then((res) => console.log("response", res))
+          .catch((err) => alert("error", err));
       } else if (contract === "sepolia") {
         if (networkId.chainId !== 11155111n) {
           await window.ethereum.request({
